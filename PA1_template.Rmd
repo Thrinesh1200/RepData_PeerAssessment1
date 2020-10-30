@@ -1,0 +1,86 @@
+---
+title: "project1"
+author: "Thrinesh Duvvuru"
+date: "24/10/2020"
+output: html_document
+---
+
+REPRODUCIBLE RESEARCH PROJECT 1
+===============================
+
+##Unzipping the data
+```{r}
+unzip(zipfile="repdata_data_activity.zip",exdir = getwd())
+```
+
+##loading activity data
+```{r}
+activity<-read.csv("activity.csv",header = TRUE)
+```
+
+##Mean total number of steps taken per day
+```{r}
+steps<-tapply(activity$steps,activity$date,sum)
+hist(steps,xlab="number of steps",main="steps per day")
+```
+
+##Average daily activity pattern
+```{r}
+averagesteps<-tapply(activity$steps,activity$interval,mean,na.rm=TRUE)
+plot(as.numeric(names(averagesteps)),averagesteps,xlab="interval",ylab="steps",main="Average daily activity",type = "l")
+```
+
+##The 5 min interval that contain maximum number of steps
+```{r}
+maxinterval<-names(sort(averagesteps,decreasing = TRUE)[1])
+maxsteps<-sort(averagesteps,decreasing = TRUE)[1]
+```
+
+##Calculating the number of missing values
+```{r}
+missingvalues<-sum(is.na(activity$steps))
+```
+
+##Filling the missing values with mean and creating new dataset
+```{r}
+averagesteps<-tapply(activity$steps,activity$interval,mean,na.rm=TRUE)
+splitactivity<-split(activity,activity$interval)
+for (i in 1:length(splitactivity)) {
+  splitactivity[[i]]$steps[is.na(splitactivity[[i]]$steps)]<-averagesteps[i]
+}
+imputedactivity<-do.call("rbind",splitactivity)
+imputedactivity<-imputedactivity[order(imputedactivity$date),]
+```
+
+##Total number of steps taken each day,mean and median
+```{r}
+Totalsteps<-tapply(imputedactivity$steps,imputedactivity$date,sum)
+hist(Totalsteps,xlab="numberof steps",main="steps per day (imputed data)")
+```  
+```{r}
+Mean.imputed<-mean(Totalsteps,na.rm = TRUE)
+median.imputed<-median(Totalsteps,na.rm = TRUE)
+```
+
+##Are there differences in activity patterns between weekdays and weekends?
+```{r}
+imputedactivity$day<-ifelse(weekdays(as.Date(imputedactivity$date))=="Saturday"|weekdays(as.Date(imputedactivity$date))=="Sunday","weekend","weekday")
+```
+
+##Making a panel plot containing a time series plot of 5 minute interval and average number of steps taken,averaged across all weekends and weekdays
+```{r}
+Steps.weekend <-tapply(imputedactivity[imputedactivity$day=="weekend",]$steps,imputedactivity[imputedactivity$day=="weekend",]$interval, mean,na.rm=TRUE)
+
+steps.weekday<-tapply(imputedactivity[imputedactivity$day=="weekday",]$steps,imputedactivity[imputedactivity$day=="weekday",]$interval, mean,na.rm=TRUE)
+par(mfrow=c(1,2))
+plot(as.numeric(names(Steps.weekend)),Steps.weekend,xlab="interval",ylab="steps",main="weekend activity pattern",type = "l")
+plot(as.numeric(names(steps.weekday)),steps.weekday,xlab="interval",ylab="steps",main="weekdays activity pattern",type = "l")
+```
+
+
+
+
+
+
+
+
